@@ -42,3 +42,37 @@ def run(req: Request):
             if len(matches) >= 15:
                 break
     return {"status": "ok", "query": req.input, "matches": matches, "total": len(matches)}
+
+@app.get("/suggest")
+def suggest():
+    """Return popular self-hosted app categories."""
+    from pathlib import Path as _P
+    readme = _P(__file__).parent.parent / "README.md"
+    try:
+        text = readme.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return {"suggestions": ["media", "photo", "cloud", "git", "chat"]}
+    sections = []
+    for line in text.splitlines():
+        s = line.strip()
+        # Self-hosted README uses "## Category" and "### Software"
+        if s.startswith("## ") and "Table of Contents" not in s:
+            name = s[3:].strip()
+            if name and name not in sections and "Sponsors" not in name and len(name) < 50:
+                sections.append(name)
+    return {"suggestions": sections[:30], "total_sections": len(sections)}
+
+
+@app.get("/stats")
+def stats():
+    """Return basic stats about the awesome-selfhosted list."""
+    from pathlib import Path as _P
+    readme = _P(__file__).parent.parent / "README.md"
+    try:
+        text = readme.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return {"error": "README not found"}
+    lines = text.splitlines()
+    sections = sum(1 for l in lines if l.startswith("## "))
+    links = sum(1 for l in lines if "](" in l)
+    return {"lines": len(lines), "sections": sections, "links": links, "size_kb": round(len(text) / 1024, 1)}
