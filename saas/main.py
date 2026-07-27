@@ -27,6 +27,13 @@ def run(req: Request):
         return {"status": "error", "message": "empty query"}
     from pathlib import Path as _P
     readme = _P(__file__).parent.parent / "README.md"
+    if not readme.exists():
+        # Try lowercase
+        for alt in ('readme.md', 'Readme.md', 'awesome.md', 'AWESOME.md'):
+            p = _P(__file__).parent.parent / alt
+            if p.exists():
+                readme = p
+                break
     try:
         text = readme.read_text(encoding="utf-8", errors="ignore")
     except Exception:
